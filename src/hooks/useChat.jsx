@@ -5,6 +5,7 @@ const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
+
   const chat = async (message) => {
     setLoading(true);
     const data = await fetch(`${backendUrl}/chat`, {
