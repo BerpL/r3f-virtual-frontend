@@ -14,7 +14,7 @@ function App() {
       <div style={{ position: "absolute", zIndex: 2, width: "100%", height: "100%" }}>
         <ConsolePage />
       </div>
-      {/* <UI  hidden/> */}
+      {/* <UI  /> */}
       <div style={{ position: "relative", top: 0, left: 0, width: "100%", height: "100%" }}>
         <Canvas shadows camera={{ position: [0, 0, 1], fov: 30 }}>
           <Experience />

@@ -67,7 +67,7 @@ interface RealtimeEvent {
 
 export function ConsolePage() {
 
-  const { messages, setMessages, setLoading } = useChat();
+  const { setMessages, setLoading } = useChat();
 
 
   /**
@@ -260,8 +260,17 @@ export function ConsolePage() {
    */
   const sendLastAudioItem = async () => {
     const lastItem = items[items.length - 1]; 
-    if (!lastItem || !lastItem.formatted?.file?.url) {
-      console.log("No audio file found");
+    // if (!lastItem || !lastItem.formatted?.file?.url) {
+    //   console.log("No audio file found");
+    //   return;
+    // }
+
+    if (
+      !lastItem || 
+      lastItem.role !== 'assistant' || 
+      !lastItem.formatted?.file?.url
+    ) {
+      console.log("No assistant audio file found");
       return;
     }
   
@@ -277,11 +286,9 @@ export function ConsolePage() {
       body: formData,
     });
 
-    const result = await response.json();
+    const result = (await response.json()).messages;
     console.log('$$$$$$$$$$$$$$$$ Audio LYPSYNC successfully:', result);
-
-    const resp = (await result.json()).messages;
-    setMessages((messages: any) => [...messages, ...resp]);
+    setMessages((messages: any) => [...messages, ...result]);
     setLoading(false);
   };
 
@@ -292,7 +299,6 @@ export function ConsolePage() {
     await wavRecorder.pause();
     client.createResponse();
 
-    sendLastAudioItem()
   };
 
   /**
@@ -332,6 +338,7 @@ export function ConsolePage() {
    * Auto-scroll the conversation logs
    */
   useEffect(() => {
+    console.log("items changed")
     const conversationEls = [].slice.call(
       document.body.querySelectorAll('[data-conversation-content]')
     );
@@ -339,6 +346,17 @@ export function ConsolePage() {
       const conversationEl = el as HTMLDivElement;
       conversationEl.scrollTop = conversationEl.scrollHeight;
     }
+
+    const lastItem = items[items.length - 1]; // Obtenemos el último elemento
+    if (
+      lastItem && 
+      lastItem.role === 'assistant' && 
+      lastItem.formatted?.file?.url // Verificamos que sea un audio
+    ) {
+      sendLastAudioItem(); // Llamamos a la función
+    }
+
+    // sendLastAudioItem()
   }, [items]);
 
   /**
@@ -591,9 +609,9 @@ export function ConsolePage() {
     });
     client.on('conversation.updated', async ({ item, delta }: any) => {
       const items = client.conversation.getItems();
-      if (delta?.audio) {
-        wavStreamPlayer.add16BitPCM(delta.audio, item.id);
-      }
+      // if (delta?.audio) {
+        // wavStreamPlayer.add16BitPCM(delta.audio, item.id);
+      // }
       if (item.status === 'completed' && item.formatted.audio?.length) {
         const wavFile = await WavRecorder.decode(
           item.formatted.audio,

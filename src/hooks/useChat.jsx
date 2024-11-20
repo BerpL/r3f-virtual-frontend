@@ -16,9 +16,12 @@ export const ChatProvider = ({ children }) => {
       body: JSON.stringify({ message }),
     });
     const resp = (await data.json()).messages;
+    console.log("response message: ", resp)
     setMessages((messages) => [...messages, ...resp]);
     setLoading(false);
   };
+
+
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState();
   const [loading, setLoading] = useState(false);
@@ -40,8 +43,10 @@ export const ChatProvider = ({ children }) => {
       value={{
         chat,
         message,
+        setMessages,
         onMessagePlayed,
         loading,
+        setLoading,
         cameraZoomed,
         setCameraZoomed,
       }}

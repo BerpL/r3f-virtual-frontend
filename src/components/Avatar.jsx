@@ -123,6 +123,7 @@ export function Avatar(props) {
   const [lipsync, setLipsync] = useState();
 
   useEffect(() => {
+    console.log("message changed")
     console.log(message);
     if (!message) {
       setAnimation("Idle");
