@@ -116,6 +116,8 @@ const corresponding = {
 let setupMode = false;
 
 export function Avatar(props) {
+  const { headFollow } = useControls({ headFollow: true });
+
   const { nodes, materials, scene } = useGLTF("/models/minero.glb");
 
   const { message, onMessagePlayed, chat } = useChat();
@@ -312,6 +314,12 @@ export function Avatar(props) {
     nextBlink();
     return () => clearTimeout(blinkTimeout);
   }, []);
+  
+  useFrame((state) => {
+    if (headFollow) {
+      group.current.getObjectByName("Head").lookAt(state.camera.position);
+    }
+  });
 
   return (
     <group {...props} dispose={null} ref={group}>
