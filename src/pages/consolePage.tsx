@@ -67,7 +67,13 @@ interface RealtimeEvent {
 
 export function ConsolePage() {
 
-  const { setMessages, setLoading } = useChat();
+  const { 
+    setMessages,
+    setLoading, 
+    getKnowledgeBase, 
+    knowledgeBase, 
+    setKnowledgeBase  
+  } = useChat();
 
 
   /**
@@ -498,34 +504,9 @@ export function ConsolePage() {
 
           console.log("QUERY: ", query)
         
-          const openai = new OpenAI({
-            apiKey: process.env.VITE_OPENAI_API_KEY, 
-            dangerouslyAllowBrowser: true
-          });
-        
+          const queryResponse = await getKnowledgeBase(query)
 
-          let embeddingVector;
-
-          const embeddingResponse = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: query,
-          });
-
-          embeddingVector = embeddingResponse.data[0].embedding;
-        
-          const pc = new Pinecone({ apiKey: process.env.VITE_PINECONE_API_KEY || ''});
-        
-          let queryResponse;
-        
-          const index = pc.index("tecsup");
-
-          queryResponse = await index.namespace("2600-Chancado-Primario").query({
-            topK: 3,
-            vector: embeddingVector,
-            includeMetadata: true,
-          });
-
-          console.log("CHUNKS: ", queryResponse);
+          console.log("queryResponse: ", queryResponse)
   
           return { ok: true, data: queryResponse };
 
