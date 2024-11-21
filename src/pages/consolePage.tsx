@@ -448,6 +448,10 @@ export function ConsolePage() {
     client.updateSession({ instructions: instructions });
     // Set transcription, otherwise we don't get user transcriptions back
     client.updateSession({ input_audio_transcription: { model: 'whisper-1' } });
+    // set voice
+    client.updateSession({ voice: 'ash' });
+
+    client.updateSession({ temperature: 0.8 });
 
     // Add tools
     client.addTool(
@@ -484,7 +488,7 @@ export function ConsolePage() {
     client.addTool(
       {
         name: 'get_knowledge',
-        description: 'Obtiene información ante cualquier consulta o pregunta técnica',
+        description: 'Obtiene información ante cualquier consulta o pregunta técnica indicando al usuario que espere un momento que hara una consulta a la base de conocimientos',
         parameters: {
           type: 'object',
           properties: {
