@@ -11,7 +11,7 @@ function App() {
       <Loader />
       <Leva hidden/>
       {/* <ConsolePage/> */}
-      <div style={{ position: "absolute", zIndex: 2, width: "100%", height: "100%" }}>
+      <div style={{ position: "absolute", zIndex: 2, width: "100%", height: "auto", bottom: "0px" }}>
         <ConsolePage />
       </div>
       {/* <UI  /> */}

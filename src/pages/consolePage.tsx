@@ -617,7 +617,7 @@ export function ConsolePage() {
    */
   return (
     <div data-component="ConsolePage">
-      <div className="content-top">
+      {/* <div className="content-top">
         <div className="content-title">
           <img src="/openai-logomark.svg" />
           <span>realtime console</span>
@@ -633,10 +633,10 @@ export function ConsolePage() {
             />
           )}
         </div>
-      </div>
+      </div> */}
       <div className="content-main">
         <div className="content-logs">
-          <div className="content-block events">
+          {/* <div className="content-block events">
             <div className="visualization">
               <div className="visualization-entry client">
                 <canvas ref={clientCanvasRef} />
@@ -709,8 +709,36 @@ export function ConsolePage() {
                 );
               })}
             </div>
+          </div> */}
+          <div className="content-actions">
+            <Toggle
+              defaultValue={false}
+              labels={['manual', 'vad']}
+              values={['none', 'server_vad']}
+              onChange={(_, value) => changeTurnEndType(value)}
+            />
+            <div className="spacer" />
+            {isConnected && canPushToTalk && (
+              <Button
+                label={isRecording ? 'release to send' : 'push to talk'}
+                buttonStyle={isRecording ? 'alert' : 'regular'}
+                disabled={!isConnected || !canPushToTalk}
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+              />
+            )}
+            <div className="spacer" />
+            <Button
+              label={isConnected ? 'disconnect' : 'connect'}
+              iconPosition={isConnected ? 'end' : 'start'}
+              icon={isConnected ? X : Zap}
+              buttonStyle={isConnected ? 'regular' : 'action'}
+              onClick={
+                isConnected ? disconnectConversation : connectConversation
+              }
+            />
           </div>
-          <div className="content-block conversation">
+          <div className="content-block conversation" style={{ display: "none" }}>
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && `awaiting connection...`}
@@ -774,37 +802,6 @@ export function ConsolePage() {
               })}
             </div>
           </div>
-          <div className="content-actions">
-            <Toggle
-              defaultValue={false}
-              labels={['manual', 'vad']}
-              values={['none', 'server_vad']}
-              onChange={(_, value) => changeTurnEndType(value)}
-            />
-            <div className="spacer" />
-            {isConnected && canPushToTalk && (
-              <Button
-                label={isRecording ? 'release to send' : 'push to talk'}
-                buttonStyle={isRecording ? 'alert' : 'regular'}
-                disabled={!isConnected || !canPushToTalk}
-                onMouseDown={startRecording}
-                onMouseUp={stopRecording}
-              />
-            )}
-            <div className="spacer" />
-            <Button
-              label={isConnected ? 'disconnect' : 'connect'}
-              iconPosition={isConnected ? 'end' : 'start'}
-              icon={isConnected ? X : Zap}
-              buttonStyle={isConnected ? 'regular' : 'action'}
-              onClick={
-                isConnected ? disconnectConversation : connectConversation
-              }
-            />
-          </div>
-        </div>
-        <div className="content-right">
-          map
         </div>
       </div>
     </div>
