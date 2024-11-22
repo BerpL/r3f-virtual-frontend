@@ -284,7 +284,10 @@ export function ConsolePage() {
     formData.append("audio", audioBlob, "audio.mp3");
 
     // send audio to server
-    const response = await fetch("http://localhost:3000/process-audio", {
+    const backendUrl = import.meta.env.VITE_API_URL;
+
+    // send audio to server
+    const response = await fetch(`${backendUrl}/process-audio`, {
       method: "POST",
       body: formData,
     });
