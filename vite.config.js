@@ -1,11 +1,20 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import polyfillNode from "rollup-plugin-polyfill-node";
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), polyfillNode()],
+  plugins: [react()],
   define: {
     global: {}, // Define un objeto global vacío
+  },
+  optimizeDeps: {
+    include: [
+      "zustand",
+      "use-sync-external-store/shim/with-selector.js",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-portal",
+      "@radix-ui/react-popper",
+      "@radix-ui/react-presence",
+      "@radix-ui/react-dismissable-layer",
+    ],
   },
 });
