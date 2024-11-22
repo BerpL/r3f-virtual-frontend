@@ -10672,10 +10672,10 @@ url-parse@^1.5.3:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
 
-use-sync-external-store@1.2.2, use-sync-external-store@^1.4.0:
-  version "1.4.0-rc-fb9a90fa48-20240614"
-  resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.4.0-rc-fb9a90fa48-20240614.tgz#9f937c0434c9f74a7e83e9c519f24d58c60edb78"
-  integrity sha512-qt1qnu2L/jeu+n/E0FrV0qvBsJvwrIdf+0DibXXKbnUo5dqZoWUMRxllfd41uYMlpRBjtHTcmMuK+8OHNNAyqQ==
+use-sync-external-store@1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.2.2.tgz#c3b6390f3a30eba13200d2302dcdf1e7b57b2ef9"
+  integrity sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"

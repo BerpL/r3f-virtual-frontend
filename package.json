@@ -14,8 +14,7 @@
     "@radix-ui/react-portal": "^1.1.2",
     "@radix-ui/react-popper": "^1.2.0",
     "@radix-ui/react-presence": "^1.1.1",
-    "@radix-ui/react-dismissable-layer": "^1.1.1",
-    "use-sync-external-store": "^1.4.0"
+    "@radix-ui/react-dismissable-layer": "^1.1.1"
   },
   "dependencies": {
     "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
