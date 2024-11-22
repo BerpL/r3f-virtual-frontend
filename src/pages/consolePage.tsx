@@ -8,36 +8,33 @@
  * This will also require you to set OPENAI_API_KEY= in a `.env` file
  * You can run it with `npm run relay`, in parallel with `npm start`
  */
-const LOCAL_RELAY_SERVER_URL: string = ''
-  // import.meta.env.VITE_LOCAL_RELAY_SERVER_URL || '';
+const LOCAL_RELAY_SERVER_URL: string = "";
+// import.meta.env.VITE_LOCAL_RELAY_SERVER_URL || '';
 
 // console.log("LOCAL_RELAY_SERVER_URL: ",process.env.VITE_LOCAL_RELAY_SERVER_URL)
 
+import { useEffect, useRef, useCallback, useState } from "react";
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { RealtimeClient } from "@openai/realtime-api-beta";
+import { ItemType } from "@openai/realtime-api-beta/dist/lib/client.js";
+import { WavRecorder, WavStreamPlayer } from "../lib/wavtools/index.js";
+import { instructions } from "../utils/conversation_config.js";
+import { WavRenderer } from "../utils/wav_renderer.js";
 
-import { RealtimeClient } from '@openai/realtime-api-beta';
-import { ItemType } from '@openai/realtime-api-beta/dist/lib/client.js';
-import { WavRecorder, WavStreamPlayer } from '../lib/wavtools/index.js';
-import { instructions } from '../utils/conversation_config.js';
-import { WavRenderer } from '../utils/wav_renderer.js';
-
-import { X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
-import { Button } from '../components/button/Button.js';
-import { Toggle } from '../components/toggle/Toggle.js';
+import { X, Edit, Zap, ArrowUp, ArrowDown } from "react-feather";
+import { Button } from "../components/button/Button.js";
+import { Toggle } from "../components/toggle/Toggle.js";
 // import { Map } from '../components/Map.js';
 
-
-import './ConsolePage.scss';
-import { isJsxOpeningLikeElement } from 'typescript';
+import "./ConsolePage.scss";
+import { isJsxOpeningLikeElement } from "typescript";
 
 /**
  * Libraries of retriever tool
  */
-import { Pinecone } from '@pinecone-database/pinecone';
-
-import { OpenAI } from 'openai';
-import React from 'react';
+import { Pinecone } from "@pinecone-database/pinecone";
+import { OpenAI } from "openai";
+import React from "react";
 import { useChat } from "../hooks/useChat";
 
 /**
@@ -62,27 +59,31 @@ interface Coordinates {
  */
 interface RealtimeEvent {
   time: string;
-  source: 'client' | 'server';
+  source: "client" | "server";
   count?: number;
   event: { [key: string]: any };
 }
 
 export function ConsolePage() {
-
-  const { setMessages, setLoading } = useChat();
-
+  const {
+    setMessages,
+    setLoading,
+    getKnowledgeBase,
+    knowledgeBase,
+    setKnowledgeBase,
+  } = useChat();
 
   /**
    * Ask user for API Key
    * If we're using the local relay server, we don't need this
    */
   const apiKey = LOCAL_RELAY_SERVER_URL
-    ? ''
-    : localStorage.getItem('tmp::voice_api_key') ||
-      prompt('OpenAI API Key') ||
-      '';
-  if (apiKey !== '') {
-    localStorage.setItem('tmp::voice_api_key', apiKey);
+    ? ""
+    : localStorage.getItem("tmp::voice_api_key") ||
+      prompt("OpenAI API Key") ||
+      "";
+  if (apiKey !== "") {
+    localStorage.setItem("tmp::voice_api_key", apiKey);
   }
 
   /**
@@ -154,9 +155,9 @@ export function ConsolePage() {
     const s = Math.floor(delta / 1000) % 60;
     const m = Math.floor(delta / 60_000) % 60;
     const pad = (n: number) => {
-      let s = n + '';
+      let s = n + "";
       while (s.length < 2) {
-        s = '0' + s;
+        s = "0" + s;
       }
       return s;
     };
@@ -167,10 +168,10 @@ export function ConsolePage() {
    * When you click the API key
    */
   const resetAPIKey = useCallback(() => {
-    const apiKey = prompt('OpenAI API Key');
+    const apiKey = prompt("OpenAI API Key");
     if (apiKey !== null) {
       localStorage.clear();
-      localStorage.setItem('tmp::voice_api_key', apiKey);
+      localStorage.setItem("tmp::voice_api_key", apiKey);
       window.location.reload();
     }
   }, []);
@@ -206,7 +207,7 @@ export function ConsolePage() {
       },
     ]);
 
-    if (client.getTurnDetectionType() === 'server_vad') {
+    if (client.getTurnDetectionType() === "server_vad") {
       await wavRecorder.record((data) => client.appendInputAudio(data.mono));
     }
   }, []);
@@ -261,31 +262,35 @@ export function ConsolePage() {
    * In push-to-talk mode, stop recording
    */
   const sendLastAudioItem = async () => {
-    const lastItem = items[items.length - 1]; 
+    const lastItem = items[items.length - 1];
+    // if (!lastItem || !lastItem.formatted?.file?.url) {
+    //   console.log("No audio file found");
+    //   return;
+    // }
 
     if (
-      !lastItem || 
-      lastItem.role !== 'assistant' || 
+      !lastItem ||
+      lastItem.role !== "assistant" ||
       !lastItem.formatted?.file?.url
     ) {
       console.log("No assistant audio file found");
       return;
     }
-  
+
     const audioUrl = lastItem.formatted.file.url;
-    const audioBlob = await fetch(audioUrl).then((res) => res.blob()); 
+    const audioBlob = await fetch(audioUrl).then((res) => res.blob());
     const formData = new FormData();
 
-    formData.append('audio', audioBlob, 'audio.mp3');
-  
+    formData.append("audio", audioBlob, "audio.mp3");
+
     // send audio to server
-    const response = await fetch('http://localhost:3000/process-audio', {
-      method: 'POST',
+    const response = await fetch("http://localhost:3000/process-audio", {
+      method: "POST",
       body: formData,
     });
 
     const result = (await response.json()).messages;
-    console.log('$$$$$$$$$$$$$$$$ Audio LYPSYNC successfully:', result);
+    console.log("$$$$$$$$$$$$$$$$ Audio LYPSYNC successfully:", result);
     setMessages((messages: any) => [...messages, ...result]);
     setLoading(false);
   };
@@ -296,7 +301,6 @@ export function ConsolePage() {
     const wavRecorder = wavRecorderRef.current;
     await wavRecorder.pause();
     client.createResponse();
-
   };
 
   /**
@@ -305,16 +309,16 @@ export function ConsolePage() {
   const changeTurnEndType = async (value: string) => {
     const client = clientRef.current;
     const wavRecorder = wavRecorderRef.current;
-    if (value === 'none' && wavRecorder.getStatus() === 'recording') {
+    if (value === "none" && wavRecorder.getStatus() === "recording") {
       await wavRecorder.pause();
     }
     client.updateSession({
-      turn_detection: value === 'none' ? null : { type: 'server_vad' },
+      turn_detection: value === "none" ? null : { type: "server_vad" },
     });
-    if (value === 'server_vad' && client.isConnected()) {
+    if (value === "server_vad" && client.isConnected()) {
       await wavRecorder.record((data) => client.appendInputAudio(data.mono));
     }
-    setCanPushToTalk(value === 'none');
+    setCanPushToTalk(value === "none");
   };
 
   /**
@@ -336,9 +340,9 @@ export function ConsolePage() {
    * Auto-scroll the conversation logs
    */
   useEffect(() => {
-    console.log("items changed")
+    console.log("items changed");
     const conversationEls = [].slice.call(
-      document.body.querySelectorAll('[data-conversation-content]')
+      document.body.querySelectorAll("[data-conversation-content]")
     );
     for (const el of conversationEls) {
       const conversationEl = el as HTMLDivElement;
@@ -347,8 +351,8 @@ export function ConsolePage() {
 
     const lastItem = items[items.length - 1]; // Obtenemos el último elemento
     if (
-      lastItem && 
-      lastItem.role === 'assistant' && 
+      lastItem &&
+      lastItem.role === "assistant" &&
       lastItem.formatted?.file?.url // Verificamos que sea un audio
     ) {
       sendLastAudioItem(); // Llamamos a la función
@@ -378,17 +382,17 @@ export function ConsolePage() {
             clientCanvas.width = clientCanvas.offsetWidth;
             clientCanvas.height = clientCanvas.offsetHeight;
           }
-          clientCtx = clientCtx || clientCanvas.getContext('2d');
+          clientCtx = clientCtx || clientCanvas.getContext("2d");
           if (clientCtx) {
             clientCtx.clearRect(0, 0, clientCanvas.width, clientCanvas.height);
             const result = wavRecorder.recording
-              ? wavRecorder.getFrequencies('voice')
+              ? wavRecorder.getFrequencies("voice")
               : { values: new Float32Array([0]) };
             WavRenderer.drawBars(
               clientCanvas,
               clientCtx,
               result.values,
-              '#0099ff',
+              "#0099ff",
               10,
               0,
               8
@@ -400,17 +404,17 @@ export function ConsolePage() {
             serverCanvas.width = serverCanvas.offsetWidth;
             serverCanvas.height = serverCanvas.offsetHeight;
           }
-          serverCtx = serverCtx || serverCanvas.getContext('2d');
+          serverCtx = serverCtx || serverCanvas.getContext("2d");
           if (serverCtx) {
             serverCtx.clearRect(0, 0, serverCanvas.width, serverCanvas.height);
             const result = wavStreamPlayer.analyser
-              ? wavStreamPlayer.getFrequencies('voice')
+              ? wavStreamPlayer.getFrequencies("voice")
               : { values: new Float32Array([0]) };
             WavRenderer.drawBars(
               serverCanvas,
               serverCtx,
               result.values,
-              '#009900',
+              "#009900",
               10,
               0,
               8
@@ -439,27 +443,31 @@ export function ConsolePage() {
     // Set instructions
     client.updateSession({ instructions: instructions });
     // Set transcription, otherwise we don't get user transcriptions back
-    client.updateSession({ input_audio_transcription: { model: 'whisper-1' } });
+    client.updateSession({ input_audio_transcription: { model: "whisper-1" } });
+    // set voice
+    client.updateSession({ voice: "ash" });
+
+    client.updateSession({ temperature: 0.8 });
 
     // Add tools
     client.addTool(
       {
-        name: 'set_memory',
-        description: 'Saves important data about the user into memory.',
+        name: "set_memory",
+        description: "Saves important data about the user into memory.",
         parameters: {
-          type: 'object',
+          type: "object",
           properties: {
             key: {
-              type: 'string',
+              type: "string",
               description:
-                'The key of the memory value. Always use lowercase and underscores, no other characters.',
+                "The key of the memory value. Always use lowercase and underscores, no other characters.",
             },
             value: {
-              type: 'string',
-              description: 'Value can be anything represented as a string',
+              type: "string",
+              description: "Value can be anything represented as a string",
             },
           },
-          required: ['key', 'value'],
+          required: ["key", "value"],
         },
       },
       async ({ key, value }: { [key: string]: any }) => {
@@ -472,71 +480,86 @@ export function ConsolePage() {
       }
     );
 
-
     client.addTool(
       {
-        name: 'get_knowledge',
-        description: 'Obtiene información ante cualquier consulta o pregunta técnica',
+        name: "get_knowledge",
+        description:
+          "Obtiene información ante cualquier consulta o pregunta técnica indicando al usuario que espere un momento que hara una consulta a la base de conocimientos",
         parameters: {
-          type: 'object',
+          type: "object",
           properties: {
             query: {
-              type: 'string',
-              description:
-                'La consulta/pregunta del usuario',
-            }
+              type: "string",
+              description: "La consulta/pregunta del usuario",
+            },
           },
-          required: ['query'],
+          required: ["query"],
         },
       },
       async ({ query }: { query: string }) => {
-
         try {
           console.log("REQUEST TO PINECONE");
 
-          console.log("QUERY: ", query)
-        
-          const openai = new OpenAI({
-            apiKey: import.meta.env.VITE_OPENAI_API_KEY, 
-            dangerouslyAllowBrowser: true
-          });
-        
+          console.log("QUERY: ", query);
 
-          let embeddingVector;
+          const queryResponse = await getKnowledgeBase(query);
 
-          const embeddingResponse = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
-            input: query,
-          });
+          console.log("queryResponse: ", queryResponse);
 
-          embeddingVector = embeddingResponse.data[0].embedding;
-        
-          const pc = new Pinecone({ apiKey: import.meta.env.VITE_PINECONE_API_KEY || ''});
-        
-          let queryResponse;
-        
-          const index = pc.index("tecsup");
-
-          queryResponse = await index.namespace("2600-Chancado-Primario").query({
-            topK: 3,
-            vector: embeddingVector,
-            includeMetadata: true,
-          });
-
-          console.log("CHUNKS: ", queryResponse);
-  
           return { ok: true, data: queryResponse };
-
         } catch (error) {
           console.error("Error to query Pinecone:", error);
           return { ok: false, error: "Error to query to knowledge base" };
         }
-      
-       
       }
-    )
+    );
 
-    client.on('realtime.event', (realtimeEvent: RealtimeEvent) => {
+    client.addTool(
+      {
+        name: "get_weather",
+        description:
+          "Retrieves the weather for a given lat, lng coordinate pair. Specify a label for the location.",
+        parameters: {
+          type: "object",
+          properties: {
+            lat: {
+              type: "number",
+              description: "Latitude",
+            },
+            lng: {
+              type: "number",
+              description: "Longitude",
+            },
+            location: {
+              type: "string",
+              description: "Name of the location",
+            },
+          },
+          required: ["lat", "lng", "location"],
+        },
+      },
+      async ({ lat, lng, location }: { [key: string]: any }) => {
+        setMarker({ lat, lng, location });
+        setCoords({ lat, lng, location });
+        const result = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`
+        );
+        const json = await result.json();
+        const temperature = {
+          value: json.current.temperature_2m as number,
+          units: json.current_units.temperature_2m as string,
+        };
+        const wind_speed = {
+          value: json.current.wind_speed_10m as number,
+          units: json.current_units.wind_speed_10m as string,
+        };
+        setMarker({ lat, lng, location, temperature, wind_speed });
+        return json;
+      }
+    );
+
+    // handle realtime events from client + server for event logging
+    client.on("realtime.event", (realtimeEvent: RealtimeEvent) => {
       setRealtimeEvents((realtimeEvents) => {
         const lastEvent = realtimeEvents[realtimeEvents.length - 1];
         if (lastEvent?.event.type === realtimeEvent.event.type) {
@@ -548,17 +571,20 @@ export function ConsolePage() {
         }
       });
     });
-    client.on('error', (event: any) => console.error(event));
-    client.on('conversation.interrupted', async () => {
+    client.on("error", (event: any) => console.error(event));
+    client.on("conversation.interrupted", async () => {
       const trackSampleOffset = await wavStreamPlayer.interrupt();
       if (trackSampleOffset?.trackId) {
         const { trackId, offset } = trackSampleOffset;
         await client.cancelResponse(trackId, offset);
       }
     });
-    client.on('conversation.updated', async ({ item, delta }: any) => {
+    client.on("conversation.updated", async ({ item, delta }: any) => {
       const items = client.conversation.getItems();
-      if (item.status === 'completed' && item.formatted.audio?.length) {
+      // if (delta?.audio) {
+      // wavStreamPlayer.add16BitPCM(delta.audio, item.id);
+      // }
+      if (item.status === "completed" && item.formatted.audio?.length) {
         const wavFile = await WavRecorder.decode(
           item.formatted.audio,
           24000,
@@ -582,20 +608,111 @@ export function ConsolePage() {
    */
   return (
     <div data-component="ConsolePage">
+      {/* <div className="content-top">
+        <div className="content-title">
+          <img src="/openai-logomark.svg" />
+          <span>realtime console</span>
+        </div>
+        <div className="content-api-key">
+          {!LOCAL_RELAY_SERVER_URL && (
+            <Button
+              icon={Edit}
+              iconPosition="end"
+              buttonStyle="flush"
+              label={`api key: ${apiKey.slice(0, 3)}...`}
+              onClick={() => resetAPIKey()}
+            />
+          )}
+        </div>
+      </div> */}
       <div className="content-main">
         <div className="content-logs">
+          {/* <div className="content-block events">
+            <div className="visualization">
+              <div className="visualization-entry client">
+                <canvas ref={clientCanvasRef} />
+              </div>
+              <div className="visualization-entry server">
+                <canvas ref={serverCanvasRef} />
+              </div>
+            </div>
+            <div className="content-block-title">events</div>
+            <div className="content-block-body" ref={eventsScrollRef}>
+              {!realtimeEvents.length && `awaiting connection...`}
+              {realtimeEvents.map((realtimeEvent, i) => {
+                const count = realtimeEvent.count;
+                const event = { ...realtimeEvent.event };
+                if (event.type === 'input_audio_buffer.append') {
+                  event.audio = `[trimmed: ${event.audio.length} bytes]`;
+                } else if (event.type === 'response.audio.delta') {
+                  event.delta = `[trimmed: ${event.delta.length} bytes]`;
+                }
+                return (
+                  <div className="event" key={event.event_id}>
+                    <div className="event-timestamp">
+                      {formatTime(realtimeEvent.time)}
+                    </div>
+                    <div className="event-details">
+                      <div
+                        className="event-summary"
+                        onClick={() => {
+                          // toggle event details
+                          const id = event.event_id;
+                          const expanded = { ...expandedEvents };
+                          if (expanded[id]) {
+                            delete expanded[id];
+                          } else {
+                            expanded[id] = true;
+                          }
+                          setExpandedEvents(expanded);
+                        }}
+                      >
+                        <div
+                          className={`event-source ${
+                            event.type === 'error'
+                              ? 'error'
+                              : realtimeEvent.source
+                          }`}
+                        >
+                          {realtimeEvent.source === 'client' ? (
+                            <ArrowUp />
+                          ) : (
+                            <ArrowDown />
+                          )}
+                          <span>
+                            {event.type === 'error'
+                              ? 'error!'
+                              : realtimeEvent.source}
+                          </span>
+                        </div>
+                        <div className="event-type">
+                          {event.type}
+                          {count && ` (${count})`}
+                        </div>
+                      </div>
+                      {!!expandedEvents[event.event_id] && (
+                        <div className="event-payload">
+                          {JSON.stringify(event, null, 2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div> */}
           <div className="content-actions">
             <Toggle
               defaultValue={false}
-              labels={['manual', 'vad']}
-              values={['none', 'server_vad']}
+              labels={["manual", "vad"]}
+              values={["none", "server_vad"]}
               onChange={(_, value) => changeTurnEndType(value)}
             />
             <div className="spacer" />
             {isConnected && canPushToTalk && (
               <Button
-                label={isRecording ? 'release to send' : 'push to talk'}
-                buttonStyle={isRecording ? 'alert' : 'regular'}
+                label={isRecording ? "release to send" : "push to talk"}
+                buttonStyle={isRecording ? "alert" : "regular"}
                 disabled={!isConnected || !canPushToTalk}
                 onMouseDown={startRecording}
                 onMouseUp={stopRecording}
@@ -603,27 +720,30 @@ export function ConsolePage() {
             )}
             <div className="spacer" />
             <Button
-              label={isConnected ? 'disconnect' : 'connect'}
-              iconPosition={isConnected ? 'end' : 'start'}
+              label={isConnected ? "disconnect" : "connect"}
+              iconPosition={isConnected ? "end" : "start"}
               icon={isConnected ? X : Zap}
-              buttonStyle={isConnected ? 'regular' : 'action'}
+              buttonStyle={isConnected ? "regular" : "action"}
               onClick={
                 isConnected ? disconnectConversation : connectConversation
               }
             />
           </div>
-          <div className="content-block conversation">
+          <div
+            className="content-block conversation"
+            style={{ display: "none" }}
+          >
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && `awaiting connection...`}
               {items.map((conversationItem, i) => {
                 return (
                   <div className="conversation-item" key={conversationItem.id}>
-                    <div className={`speaker ${conversationItem.role || ''}`}>
+                    <div className={`speaker ${conversationItem.role || ""}`}>
                       <div>
                         {(
                           conversationItem.role || conversationItem.type
-                        ).replaceAll('_', ' ')}
+                        ).replaceAll("_", " ")}
                       </div>
                       <div
                         className="close"
@@ -636,7 +756,7 @@ export function ConsolePage() {
                     </div>
                     <div className={`speaker-content`}>
                       {/* tool response */}
-                      {conversationItem.type === 'function_call_output' && (
+                      {conversationItem.type === "function_call_output" && (
                         <div>{conversationItem.formatted.output}</div>
                       )}
                       {/* tool call */}
@@ -647,21 +767,21 @@ export function ConsolePage() {
                         </div>
                       )}
                       {!conversationItem.formatted.tool &&
-                        conversationItem.role === 'user' && (
+                        conversationItem.role === "user" && (
                           <div>
                             {conversationItem.formatted.transcript ||
                               (conversationItem.formatted.audio?.length
-                                ? '(awaiting transcript)'
+                                ? "(awaiting transcript)"
                                 : conversationItem.formatted.text ||
-                                  '(item sent)')}
+                                  "(item sent)")}
                           </div>
                         )}
                       {!conversationItem.formatted.tool &&
-                        conversationItem.role === 'assistant' && (
+                        conversationItem.role === "assistant" && (
                           <div>
                             {conversationItem.formatted.transcript ||
                               conversationItem.formatted.text ||
-                              '(truncated)'}
+                              "(truncated)"}
                           </div>
                         )}
                       {conversationItem.formatted.file && (

@@ -125,7 +125,7 @@ export function Avatar(props) {
   const [lipsync, setLipsync] = useState();
 
   useEffect(() => {
-    console.log("message changed")
+    console.log("message changed");
     console.log(message);
     if (!message) {
       setAnimation("Idle");
@@ -315,6 +315,12 @@ export function Avatar(props) {
     return () => clearTimeout(blinkTimeout);
   }, []);
   
+  useFrame((state) => {
+    if (headFollow) {
+      group.current.getObjectByName("Head").lookAt(state.camera.position);
+    }
+  });
+
   useFrame((state) => {
     if (headFollow) {
       group.current.getObjectByName("Head").lookAt(state.camera.position);
