@@ -152,6 +152,7 @@ export function Avatar(props) {
     let lipsyncInterval;
   
     if (streaming) {
+      console.log(streaming);
       console.log("streaming is true, starting lip sync loop");
       setAnimation("Talking_2");
       setFacialExpression("smile");
@@ -170,20 +171,21 @@ export function Avatar(props) {
         });
       }, 200);
     } else {
+      console.log(streaming);
       console.log("streaming is false, stopping lip sync loop");
       setAnimation("Idle");
-      setFacialExpression("default");
+      setFacialExpression("smile");
   
-      scene.traverse((child) => {
-        if (child.isSkinnedMesh && child.morphTargetDictionary) {
-          Object.keys(child.morphTargetDictionary).forEach((key) => {
-            const index = child.morphTargetDictionary[key];
-            if (index !== undefined) {
-              child.morphTargetInfluences[index] = 0;
-            }
-          });
-        }
-      });
+      // scene.traverse((child) => {
+      //   if (child.isSkinnedMesh && child.morphTargetDictionary) {
+      //     Object.keys(child.morphTargetDictionary).forEach((key) => {
+      //       const index = child.morphTargetDictionary[key];
+      //       if (index !== undefined) {
+      //         child.morphTargetInfluences[index] = 0;
+      //       }
+      //     });
+      //   }
+      // });
     }
     return () => {
       if (lipsyncInterval) clearInterval(lipsyncInterval);
@@ -221,18 +223,29 @@ export function Avatar(props) {
     animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name // Check if Idle animation exists otherwise use first animation
   );
   useEffect(() => {
-    if(actions[animation]){
-      if(streaming === false){
-        actions[animation].paused = true
-      }else{
-        actions[animation]
-        .reset()
-        .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
+    if (actions[animation]) {
+      // Detener todas las animaciones activas excepto la actual
+      Object.values(actions).forEach((action) => {
+        if (action !== actions[animation]) {
+          action.fadeOut(0.5); // Suavizar la transición
+        }
+      });
+  
+      // Activar la animación actual con una transición suave
+      actions[animation]
+        .reset() // Reinicia el tiempo de la animación
+        .fadeIn(0.5) // Suaviza la transición a esta animación
         .play();
-      }
     }
-    return () => actions[animation].fadeOut(0.5);
-  }, [animation, streaming]);
+  
+    // Cleanup para asegurarte de que la animación saliente desaparezca
+    return () => {
+      if (actions[animation]) {
+        actions[animation].fadeOut(0.5);
+      }
+    };
+  }, [animation]);
+  
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     scene.traverse((child) => {
