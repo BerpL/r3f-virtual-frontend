@@ -36,8 +36,8 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { OpenAI } from "openai";
 import React from "react";
 import { useChat } from "../hooks/useChat";
-import setAnimation from "../components/Avatar.jsx"
-import setFacialExpression from "../components/Avatar.jsx"
+import setAnimation from "../components/Avatar.jsx";
+import setFacialExpression from "../components/Avatar.jsx";
 /**
  * Type for all event logs
  */
@@ -56,10 +56,9 @@ export function ConsolePage() {
     getKnowledgeBase,
     knowledgeBase,
     setKnowledgeBase,
-    setStreaming
+    setStreaming,
   } = useChat();
 
-  
   /**
    * Ask user for API Key
    * If we're using the local relay server, we don't need this
@@ -224,12 +223,6 @@ export function ConsolePage() {
    * In push-to-talk mode, stop recording
    */
   const sendLastAudioItem = async (lastItem: any) => {
-    // const lastItem = items[items.length - 1];
-    // if (!lastItem || !lastItem.formatted?.file?.url) {
-    //   console.log("No audio file found");
-    //   return;
-    // }
-
     console.log("last items", lastItem);
 
     if (
@@ -289,8 +282,6 @@ export function ConsolePage() {
     }
     setCanPushToTalk(value === "none");
   };
-
-
 
   /*
    * Auto-scroll the event logs
@@ -369,7 +360,6 @@ export function ConsolePage() {
               : { values: new Float32Array([0]) };
             // console.log("result server canvas: ", result);
 
-
             const allZero = Array.from(result.values).every(
               (value) => value === 0
             );
@@ -378,7 +368,6 @@ export function ConsolePage() {
               lastAllZero = allZero;
               setStreaming(!allZero);
             }
-
 
             WavRenderer.drawBars(
               serverCanvas,
@@ -488,17 +477,6 @@ export function ConsolePage() {
     client.on("realtime.event", (realtimeEvent: RealtimeEvent) => {
       setRealtimeEvents((realtimeEvents) => {
         const lastEvent = realtimeEvents[realtimeEvents.length - 1];
-        // console.log("last event: ", lastEvent)
-
-        // if(lastEvent?.event.type === 'response.create'){
-        //   console.log("INICIO DE ANIMACIONESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
-        //   setStreaming(true)
-        // }
-
-        // if(lastEvent?.event.type === "response.done"){
-        //   console.log("FINALIZACIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-        //   setStreaming(false)
-        // }
 
         if (lastEvent?.event.type === realtimeEvent.event.type) {
           // if we receive multiple events in a row, aggregate them for display purposes
@@ -509,9 +487,10 @@ export function ConsolePage() {
         }
       });
     });
-    client.on("error", (event: any) => {console.error(event)});
+    client.on("error", (event: any) => {
+      console.error(event);
+    });
     client.on("conversation.interrupted", async () => {
-      // setStreaming(false)
       const trackSampleOffset = await wavStreamPlayer.interrupt();
       if (trackSampleOffset?.trackId) {
         const { trackId, offset } = trackSampleOffset;
@@ -519,17 +498,10 @@ export function ConsolePage() {
       }
     });
     client.on("conversation.updated", async ({ item, delta }: any) => {
-      console.log("conversation update")
-      // console.log("item: ",item)
-      // console.log("delta: ", delta)
+      console.log("conversation update");
       const items = client.conversation.getItems();
       if (delta?.audio) {
-        // console.log("holaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         wavStreamPlayer.add16BitPCM(delta.audio, item.id);
-        // setMessage({ animation: "Talking_1", facialExpression: "smile", audio: delta.audio})
-        // setAnimation("Talking_2")
-        // setFacialExpression("smile");
-        // setStreaming(true)
       }
 
       if (item.status === "completed" && item.formatted.audio?.length) {
@@ -542,14 +514,8 @@ export function ConsolePage() {
       }
       setItems(items);
 
-      if (
-        item.role === 'assistant' &&
-        item.formatted?.file?.url
-      ) {
-        console.log("calling to avatar!!!!!!!!!!!!!!!!!!!!!!11")
-        // await sendLastAudioItem(item);
-        // setMessage({ animation: "Talking_2", facialExpression: "smile", audio: item.formatted.file.url})
-        // setStreaming(false)
+      if (item.role === "assistant" && item.formatted?.file?.url) {
+        console.log("calling to avatar!!!!!!!!!!!!!!!!!!!!!!11");
       }
     });
 
@@ -566,9 +532,24 @@ export function ConsolePage() {
    */
   return (
     <div data-component="ConsolePage">
+      {/* Contenedor para el logo */}
+      <div
+        style={{
+          position: "fixed",
+          top: "1rem",
+          left: "1rem",
+          zIndex: 9999, // Se asegura de estar encima de todo
+        }}
+      >
+        <img
+          src="/logo-tecsup.png"
+          alt="Logo"
+          style={{ height: "3rem" }}
+        />
+      </div>
       <div className="content-main">
         <div className="content-logs">
-          <div className="content-block events">
+          <div className="content-block events" style={{ display: "none" }}>
             <div className="visualization">
               <div className="visualization-entry client">
                 <canvas ref={clientCanvasRef} />
@@ -644,7 +625,10 @@ export function ConsolePage() {
             </div>
           </div>
 
-          <div className="content-block conversation">
+          <div
+            className="content-block conversation"
+            style={{ display: "none" }}
+          >
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && `awaiting connection...`}
@@ -712,6 +696,7 @@ export function ConsolePage() {
           <div className="content-actions">
             <div
               style={{
+                display: "contents",
                 position: "absolute",
                 zIndex: 2,
                 width: "100%",

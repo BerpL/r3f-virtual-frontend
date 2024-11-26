@@ -423,11 +423,6 @@ export function Avatar(props) {
         morphTargetInfluences={nodes.EyeRight.morphTargetInfluences}
       />
       <skinnedMesh
-        geometry={nodes['logo-tecsup'].geometry}
-        material={materials['logo-tecsup']}
-        skeleton={nodes['logo-tecsup'].skeleton}
-      />
-      <skinnedMesh
         geometry={nodes.Wolf3D_Body.geometry}
         material={materials.Wolf3D_Body}
         skeleton={nodes.Wolf3D_Body.skeleton}
