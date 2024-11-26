@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 
-const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const backendUrl = import.meta.env.VITE_API_URL || "https://6gx89pt0-3000.brs.devtunnels.ms";
 
 const ChatContext = createContext();
 
@@ -18,7 +18,7 @@ export const ChatProvider = ({ children }) => {
         },
         body: JSON.stringify({ query }),
       });
-      const resp = (await data.json()).queryResponse;
+      const resp = (await data.json()).response;
       console.log("response message: ", resp)
 
       console.log("chunks: ", resp)
@@ -50,6 +50,8 @@ export const ChatProvider = ({ children }) => {
   const [message, setMessage] = useState();
   const [loading, setLoading] = useState(false);
   const [cameraZoomed, setCameraZoomed] = useState(true);
+  const [streaming, setStreaming] = useState(false)
+
   const onMessagePlayed = () => {
     setMessages((messages) => messages.slice(1));
   };
@@ -67,6 +69,7 @@ export const ChatProvider = ({ children }) => {
       value={{
         chat,
         message,
+        setMessage,
         setMessages,
         onMessagePlayed,
         loading,
@@ -75,7 +78,9 @@ export const ChatProvider = ({ children }) => {
         setCameraZoomed,
         knowledgeBase,
         setKnowledgeBase,
-        getKnowledgeBase
+        getKnowledgeBase,
+        streaming,
+        setStreaming
       }}
     >
       {children}

@@ -118,27 +118,100 @@ let setupMode = false;
 export function Avatar(props) {
   const { headFollow } = useControls({ headFollow: true });
 
-  const { nodes, materials, scene } = useGLTF("/models/minero.glb");
+  const { nodes, materials, scene } = useGLTF("/models/chica.glb");
 
-  const { message, onMessagePlayed, chat } = useChat();
+  const { message, streaming, onMessagePlayed, chat } = useChat();
 
   const [lipsync, setLipsync] = useState();
 
-  useEffect(() => {
-    console.log("message changed");
-    console.log(message);
-    if (!message) {
-      setAnimation("Idle");
-      return;
+  const generateDefaultLipsync = (duration = 60, interval = 0.2) => {
+    const phonemes = ["X", "B", "C", "E", "A", "F"]; // Lista de fonemas que simulan el habla
+    const mouthCues = [];
+    let time = 0;
+  
+    while (time < duration) {
+      const randomPhoneme = phonemes[Math.floor(Math.random() * phonemes.length)];
+      mouthCues.push({
+        start: time,
+        end: time + interval,
+        value: randomPhoneme,
+      });
+      time += interval;
     }
-    setAnimation(message.animation);
-    setFacialExpression(message.facialExpression);
-    setLipsync(message.lipsync);
-    const audio = new Audio("data:audio/mp3;base64," + message.audio);
-    audio.play();
-    setAudio(audio);
-    audio.onended = onMessagePlayed;
-  }, [message]);
+  
+    return {
+      metadata: {
+        soundFile: null, // No hay archivo de audio
+        duration: duration,
+      },
+      mouthCues: mouthCues,
+    };
+  };  
+
+  useEffect(() => {
+    let lipsyncInterval;
+  
+    if (streaming) {
+      console.log("streaming is true, starting lip sync loop");
+      setAnimation("Talking_2");
+      setFacialExpression("smile");
+  
+      lipsyncInterval = setInterval(() => {
+        const randomPhoneme = Object.values(corresponding)[
+          Math.floor(Math.random() * Object.values(corresponding).length)
+        ];
+        scene.traverse((child) => {
+          if (child.isSkinnedMesh && child.morphTargetDictionary) {
+            const index = child.morphTargetDictionary[randomPhoneme];
+            if (index !== undefined) {
+              child.morphTargetInfluences[index] = Math.random();
+            }
+          }
+        });
+      }, 200);
+    } else {
+      console.log("streaming is false, stopping lip sync loop");
+      setAnimation("Idle");
+      setFacialExpression("default");
+  
+      scene.traverse((child) => {
+        if (child.isSkinnedMesh && child.morphTargetDictionary) {
+          Object.keys(child.morphTargetDictionary).forEach((key) => {
+            const index = child.morphTargetDictionary[key];
+            if (index !== undefined) {
+              child.morphTargetInfluences[index] = 0;
+            }
+          });
+        }
+      });
+    }
+    return () => {
+      if (lipsyncInterval) clearInterval(lipsyncInterval);
+    };
+  }, [streaming, scene]);  
+
+
+  // useEffect(() => {
+  //   console.log("message changed");
+  //   console.log(message);
+  //   if (!message) {
+  //     setAnimation("Idle");
+  //     setFacialExpression("default");
+  //     setLipsync(generateDefaultLipsync(6000)); // Configurar lipsync predeterminado de 1 minuto
+  //     return;
+  //   }
+  //   setAnimation(message.animation);
+  //   setFacialExpression(message.facialExpression);
+  //   setLipsync(generateDefaultLipsync(6000));
+
+
+  //   // const audio = new Audio("data:audio/mp3;base64," + message.audio);
+  //   const audio = new Audio(message.audio)
+  //   // audio.play();
+  //   setAudio(audio);
+  //   // setAudioLength(message.audio.length)
+  //   audio.onended = onMessagePlayed;
+  // }, [message]);
 
   const { animations } = useGLTF("/models/animations.glb");
 
@@ -148,12 +221,18 @@ export function Avatar(props) {
     animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name // Check if Idle animation exists otherwise use first animation
   );
   useEffect(() => {
-    actions[animation]
-      .reset()
-      .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
-      .play();
+    if(actions[animation]){
+      if(streaming === false){
+        actions[animation].paused = true
+      }else{
+        actions[animation]
+        .reset()
+        .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
+        .play();
+      }
+    }
     return () => actions[animation].fadeOut(0.5);
-  }, [animation]);
+  }, [animation, streaming]);
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     scene.traverse((child) => {
@@ -187,6 +266,7 @@ export function Avatar(props) {
   const [winkRight, setWinkRight] = useState(false);
   const [facialExpression, setFacialExpression] = useState("");
   const [audio, setAudio] = useState();
+  const [audiolength, setAudioLength] = useState(0)
 
   useFrame(() => {
     !setupMode &&
@@ -212,13 +292,16 @@ export function Avatar(props) {
 
     const appliedMorphTargets = [];
     if (message && lipsync) {
-      const currentAudioTime = audio.currentTime;
+      let currentAudioTime = 0
+      // const currentAudioTime = audio.currentAudioTime;
+      // const currentAudioTime = audiolength
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];
         if (
           currentAudioTime >= mouthCue.start &&
           currentAudioTime <= mouthCue.end
         ) {
+          // console.log("entro!!!!!!! ")
           appliedMorphTargets.push(corresponding[mouthCue.value]);
           lerpMorphTarget(corresponding[mouthCue.value], 1, 0.2);
           break;
@@ -324,16 +407,6 @@ export function Avatar(props) {
   return (
     <group {...props} dispose={null} ref={group}>
       <skinnedMesh
-        geometry={nodes.CascoyBarbiquejoM01_mesh.geometry}
-        material={materials.Casco_Lentes_material}
-        skeleton={nodes.CascoyBarbiquejoM01_mesh.skeleton}
-      />
-      <skinnedMesh
-        geometry={nodes.chalecoM01_mesh.geometry}
-        material={materials["aiSSChaleco01_material.001"]}
-        skeleton={nodes.chalecoM01_mesh.skeleton}
-      />
-      <skinnedMesh
         name="EyeLeft"
         geometry={nodes.EyeLeft.geometry}
         material={materials.Wolf3D_Eye}
@@ -348,6 +421,11 @@ export function Avatar(props) {
         skeleton={nodes.EyeRight.skeleton}
         morphTargetDictionary={nodes.EyeRight.morphTargetDictionary}
         morphTargetInfluences={nodes.EyeRight.morphTargetInfluences}
+      />
+      <skinnedMesh
+        geometry={nodes['logo-tecsup'].geometry}
+        material={materials['logo-tecsup']}
+        skeleton={nodes['logo-tecsup'].skeleton}
       />
       <skinnedMesh
         geometry={nodes.Wolf3D_Body.geometry}
@@ -390,16 +468,12 @@ export function Avatar(props) {
         morphTargetDictionary={nodes.Wolf3D_Teeth.morphTargetDictionary}
         morphTargetInfluences={nodes.Wolf3D_Teeth.morphTargetInfluences}
       />
-      <skinnedMesh
-        geometry={nodes.zapatosM01_mesh.geometry}
-        material={materials.aiSZapatos01_material}
-        skeleton={nodes.zapatosM01_mesh.skeleton}
-      />
       <primitive object={nodes.Hips} />
-      <primitive object={nodes.neutral_bone} />
     </group>
   );
 }
 
-useGLTF.preload("/models/minero.glb");
+useGLTF.preload("/models/chica.glb");
 useGLTF.preload("/models/animations.glb");
+
+export default Avatar

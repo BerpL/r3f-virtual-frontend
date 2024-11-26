@@ -1,3 +1,7 @@
+// import { useChat } from "../hooks/useChat";
+
+
+
 const dataMap = new WeakMap();
 
 /**
@@ -74,6 +78,8 @@ export const WavRenderer = {
    * @param barSpacing spacing between bars in px
    * @param center vertically center the bars
    */
+
+
   drawBars: (
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
@@ -84,6 +90,7 @@ export const WavRenderer = {
     barSpacing: number = 0,
     center: boolean = false
   ) => {
+
     pointCount = Math.floor(
       Math.min(
         pointCount,
@@ -104,6 +111,16 @@ export const WavRenderer = {
       const height = Math.max(1, amplitude * canvas.height);
       const x = barSpacing + i * (barWidth + barSpacing);
       const y = center ? (canvas.height - height) / 2 : canvas.height - height;
+
+
+      // console.log("x: ", x,"  y:", y, "bardwidth: ", barWidth," height: ", height)
+
+      // if(height > 1){
+      //   setMessage({ animation: "Talking_1",facialExpression: "smile" })
+      // }else{
+      //   setMessage({ animation: "Idle",facialExpression: "default" })
+      // }
+
       ctx.fillStyle = color;
       ctx.fillRect(x, y, barWidth, height);
     }
