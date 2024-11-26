@@ -720,6 +720,7 @@ export function ConsolePage() {
                   onMouseUp={stopRecording}
                   onTouchStart={startRecording}
                   onTouchEnd={stopRecording}
+                  style={{ userSelect: "none" }}
                 />
               )}
               <div className="spacer" />
