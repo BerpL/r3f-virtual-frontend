@@ -718,6 +718,8 @@ export function ConsolePage() {
                   disabled={!isConnected || !canPushToTalk}
                   onMouseDown={startRecording}
                   onMouseUp={stopRecording}
+                  onTouchStart={startRecording}
+                  onTouchEnd={stopRecording}
                 />
               )}
               <div className="spacer" />
