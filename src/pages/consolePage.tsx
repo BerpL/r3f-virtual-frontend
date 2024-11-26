@@ -706,14 +706,14 @@ export function ConsolePage() {
             >
               <Toggle
                 defaultValue={false}
-                labels={["manual", "vad"]}
+                labels={["Manual", "Tiempo real"]}
                 values={["none", "server_vad"]}
                 onChange={(_, value) => changeTurnEndType(value)}
               />
               <div className="spacer" />
               {isConnected && canPushToTalk && (
                 <Button
-                  label={isRecording ? "release to send" : "push to talk"}
+                  label={isRecording ? "Suelta para enviar" : "Presiona para hablar"}
                   buttonStyle={isRecording ? "alert" : "regular"}
                   disabled={!isConnected || !canPushToTalk}
                   onMouseDown={startRecording}
@@ -724,7 +724,7 @@ export function ConsolePage() {
               )}
               <div className="spacer" />
               <Button
-                label={isConnected ? "disconnect" : "connect"}
+                label={isConnected ? "Desconectar" : "Conectar"}
                 iconPosition={isConnected ? "end" : "start"}
                 icon={isConnected ? X : Zap}
                 buttonStyle={isConnected ? "regular" : "action"}
