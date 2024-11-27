@@ -13,6 +13,7 @@
 }
 
 body {
+  user-select: none; /* Bloquea la selección de texto */
   margin: 0;
   background-color: #D9F2FC;
   background-image: url('/fondo.png'); /* Ruta basada en public */
